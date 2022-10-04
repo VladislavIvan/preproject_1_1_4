@@ -3,12 +3,16 @@ package jm.task.core.jdbc.dao;
 import jm.task.core.jdbc.model.User;
 import jm.task.core.jdbc.util.Util;
 
-
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
+
+import static jm.task.core.jdbc.util.Util.connection;
 
 public class UserDaoJDBCImpl implements UserDao {
     private String sql;
@@ -25,88 +29,83 @@ public class UserDaoJDBCImpl implements UserDao {
                 " age INT(3) NOT NULL, " +
                 " PRIMARY KEY (`id`))";
 
-        try (Connection connection = Util.getConnection();
+        try (Connection connection = Util.getInstance().getConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
-            System.out.println("INFO: Table created successfully");
         } catch (SQLException e) {
-            Logger.getLogger("create").log(Level.WARNING, "Creation failed...");
+            e.printStackTrace();
         }
     }
 
     public void dropUsersTable() {
         sql = "DROP TABLE IF EXISTS users";
 
-        try (Connection connection = Util.getConnection();
+        try (Connection connection = Util.getInstance().getConnection();
              Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
-            System.out.println("INFO: Table deleted successfully");
+            statement.execute(sql);
         } catch (SQLException e) {
-            Logger.getLogger("delete").log(Level.WARNING, "Removal failed...");
+            e.printStackTrace();
         }
     }
 
-    public void saveUser(String name, String lastName, byte age) {
+    public List<User> saveUser(String name, String lastName, byte age) {
         sql = "INSERT INTO users (name, lastName, age) VALUES (?, ?, ?)";
-
-        try (Connection connection = Util.getConnection();
+        try (Connection connection = Util.getInstance().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setString(1, name);
             preparedStatement.setString(2, lastName);
             preparedStatement.setByte(3, age);
             preparedStatement.executeUpdate();
 
-            System.out.println("INFO: User \"Alex\" added to database successfully");
-            System.out.println("INFO: User \"Anton\" added to database successfully");
-            System.out.println("INFO: User  \"Lev\" added to database successfully");
-            System.out.println("INFO: User  \"Vladimir\" added to database successfully");
+//            System.out.println("INFO: User \"Alex\" added to database successfully");
+//            System.out.println("INFO: User \"Anton\" added to database successfully");
+//            System.out.println("INFO: User  \"Lev\" added to database successfully");
+//            System.out.println("INFO: User  \"Vladimir\" added to database successfully");
 
         } catch (SQLException e) {
-            Logger.getLogger("add").log(Level.WARNING, "Adding failed...");
+            e.printStackTrace();
         }
+        return null;
     }
 
     public void removeUserById(long id) {
         sql = "DELETE FROM users WHERE id = ?";
-
-        try (Connection connection = Util.getConnection();
+        try (Connection connection = Util.getInstance().getConnection();
              PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
             preparedStatement.setLong(1, id);
             preparedStatement.executeUpdate();
             System.out.println("INFO: Remove successful, user id: " + id);
         } catch (SQLException e) {
-            Logger.getLogger("remove").log(Level.WARNING, "Remove failed..., user id: " + id);
+            e.printStackTrace();
         }
     }
 
     public List<User> getAllUsers() {
-        List<User> usersToList = new ArrayList<>();
+        List<User> users = new ArrayList<>();
         sql = "SELECT * FROM users";
-
-        try (Connection connection = Util.getConnection();
+        try (Connection connection = Util.getInstance().getConnection();
              Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement.executeQuery(sql);
             while (resultSet.next()) {
-                usersToList.add(
-                        new User(resultSet.getString(2),
-                                resultSet.getString(3),
-                                resultSet.getByte(4)));
+                User user = new User();
+                user.setName(resultSet.getString(2));
+                user.setLastName(resultSet.getString(3));
+                user.setAge(resultSet.getByte(4));
+                users.add(user);
             }
         } catch (SQLException e) {
-            Logger.getLogger("getAll").log(Level.WARNING, "Getting Users failed...");
+            e.printStackTrace();
         }
-        return usersToList;
+        return users;
     }
 
     public void cleanUsersTable() {
         sql = "TRUNCATE TABLE users";
-
-        try (Connection connection = Util.getConnection();
+        try (Connection connection = Util.getInstance().getConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate(sql);
-            System.out.println("INFO: Data Delete successful!");
         } catch (SQLException e) {
-            Logger.getLogger("delete").log(Level.WARNING, "Data Deletion failed...");
+            e.printStackTrace();
         }
     }
 }

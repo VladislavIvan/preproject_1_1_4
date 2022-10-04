@@ -1,27 +1,31 @@
 package jm.task.core.jdbc.util;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Util {
-    private final static String driver = "com.mysql.cj.jdbc.Driver";
-    static final String url = "jdbc:mysql://localhost:3306/test";
-    static final String username = "root";
-    static final String password = "root";
-    static Connection connection;
+    private final static String URL = "jdbc:mysql://localhost:3306/test";
+    private final static String USERNAME = "root";
+    private final static String PASSWORD = "root";
+    public static Connection connection;
+    private volatile static Util instance;
 
     public static Connection getConnection() {
         try {
-            Class.forName(driver);
-            connection = DriverManager.getConnection(url, username, password);
-            System.out.println("INFO: Connected successfully");
-        } catch (SQLException | ClassNotFoundException e) {
-            Logger.getLogger("connect").log(Level.WARNING, "Connection failed...");
+            return connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
-        return connection;
+    }
+    public static Util getInstance() throws SQLException {
+        if (instance == null) {
+            synchronized (Util.class) {
+                if (instance == null) {
+                    instance = new Util();
+                }
+            }
+        }
+        return instance;
     }
 }
 
